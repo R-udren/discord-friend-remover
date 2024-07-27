@@ -36,7 +36,7 @@ class DiscordAPI:
         self.token = token
         self.cache_filename = cache_filename
         self.date_format = date_format
-        self.headers = self.base_headers | {"Authorization": token}
+        self.headers = self.base_headers | {"Authorization": token}  # Pretty strange operator for me but that somehow works
 
         self.me: Optional[MyUser] = None
 
@@ -52,7 +52,7 @@ class DiscordAPI:
             response.raise_for_status()
             friends_data = await response.json()
 
-        if cache:
+        if cache:  # Zero purpose 
             await save_cache(friends_data, self.cache_filename)
 
         for friend in friends_data:
@@ -70,16 +70,14 @@ class DiscordAPI:
 
         endpoint = urljoin(self.relationships_endpoint, uid)
         try:
-            async with self.semaphore:
-                # async with self.session.delete(endpoint, headers=self.headers) as response:
-                #     response.raise_for_status()
-                #     return response.ok
-                if friend is not None:
-                    logging.debug(f"{friend.extended_str():<36} [{friend.pretty_since}] Deleted!")
-                else:
-                    logging.debug(f"User {uid} deleted!")
-                await asyncio.sleep(2)
-                return True
+            async with self.semaphore:  # Used for limit api calls
+                async with self.session.delete(endpoint, headers=self.headers) as response:
+                    response.raise_for_status()
+                    if friend is not None:  # Just for good output 
+                        logging.debug(f"{friend.extended_str():<36} [{friend.pretty_since}] Deleted!")
+                    else:
+                        logging.debug(f"User {uid} Deleted!")
+                    return True
         except aiohttp.ClientResponseError as e:
             logger.error(f"Failed to delete user {uid}: {e.status} - {e.message}")
         except aiohttp.ClientConnectionError as e:
@@ -88,7 +86,7 @@ class DiscordAPI:
             logger.error(f"Failed to delete user {uid}: {e}")
         return False
 
-    async def get_me(self) -> MyUser:
+    async def get_me(self) -> MyUser | None:
         if self.me is None:
             try:
                 async with self.session.get(self.me_endpoint, headers=self.headers) as response:
@@ -107,15 +105,11 @@ class DiscordAPI:
         try:
             if self.me is None:
                 await self.get_me()
-            return self.me is not None
-        except aiohttp.ClientResponseError as e:
-            logger.error(f"Failed to validate token: {e.status} - {e.message}")
-        except aiohttp.ClientConnectionError as e:
-            logger.error(f"Connection error while trying to validate token: {e}")
+            return self.me is not None  # True if MyUser object is created
         except Exception as e:
             logger.error(f"Failed to validate token: {e}")
         return False
 
 
 if __name__ == "__main__":
-    DiscordAPI(55, 5512123, 1231, 123, "123")
+    DiscordAPI(55, 5512123, 1231, 123, "123")  # Ignore this, please
