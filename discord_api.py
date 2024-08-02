@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from typing import List, Optional
-from urllib.parse import urljoin
 from random import choice
+from typing import List, Optional
 
 import aiohttp
 
 from user import Friend, MyUser
-from utils import load_cache, save_cache
+from utils import save_cache
 
 logger = logging.getLogger("rich")
 
@@ -68,18 +67,16 @@ class DiscordAPI:
             friend = uid
             uid = uid.id
 
-        endpoint = urljoin(self.relationships_endpoint, uid)
+        endpoint = self.relationships_endpoint + f"/{uid}"
         try:
             async with self.semaphore:
-                # async with self.session.delete(endpoint, headers=self.headers) as response:
-                #     response.raise_for_status()
-                #     return response.ok
-                if friend is not None:
-                    logging.debug(f"{friend.extended_str():<36} [{friend.pretty_since}] Deleted!")
-                else:
-                    logging.debug(f"User {uid} deleted!")
-                await asyncio.sleep(2)
-                return True
+                async with self.session.delete(endpoint, headers=self.headers) as response:
+                    response.raise_for_status()
+                    if friend is not None:
+                        logging.debug(f"{friend.extended_str():<36} [{friend.pretty_since}] Deleted!")
+                    else:
+                        logging.debug(f"User {uid} deleted!")
+                    return response.ok
         except aiohttp.ClientResponseError as e:
             logger.error(f"Failed to delete user {uid}: {e.status} - {e.message}")
         except aiohttp.ClientConnectionError as e:

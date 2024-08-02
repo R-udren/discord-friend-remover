@@ -21,6 +21,10 @@ RATE_LIMIT = 100
 setup_logging()
 logger = logging.getLogger("rich")
 
+if not TOKEN:
+    logger.error("Please provide your discord token in .env file.")
+    exit(1)
+
 
 async def main():
     semaphore = asyncio.Semaphore(RATE_LIMIT)
@@ -54,6 +58,5 @@ async def main():
 
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     with measure_execution_time():
         asyncio.run(main())
