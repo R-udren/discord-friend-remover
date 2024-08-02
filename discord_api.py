@@ -1,12 +1,13 @@
 import asyncio
 import logging
-from random import choice
 from typing import List, Optional
+from urllib.parse import urljoin
+from random import choice
 
 import aiohttp
 
 from user import Friend, MyUser
-from utils import save_cache
+from utils import load_cache, save_cache
 
 logger = logging.getLogger("rich")
 
@@ -69,7 +70,7 @@ class DiscordAPI:
 
         endpoint = self.relationships_endpoint + f"/{uid}"
         try:
-            async with self.semaphore:
+            async with self.semaphore:  # Used for limit api calls
                 async with self.session.delete(endpoint, headers=self.headers) as response:
                     response.raise_for_status()
                     if friend is not None:
@@ -112,7 +113,3 @@ class DiscordAPI:
         except Exception as e:
             logger.error(f"Failed to validate token: {e}")
         return False
-
-
-if __name__ == "__main__":
-    DiscordAPI(55, 5512123, 1231, 123, "123")
